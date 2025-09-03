@@ -1,0 +1,17 @@
+[package]
+name = "stepsampler"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+cli = ["argh", "env_logger"]
+default = ["cli"]
+
+[dependencies]
+anyhow = "1.0.99"
+hound = "3.5.1"
+itertools = "0.14.0"
+log = "0.4.27"
+rubato = { version = "0.16.2", features = ["log"] }
+argh = { version = "0.1.13", optional = true }
+env_logger = { version = "0.11.8", optional = true }
