@@ -12,6 +12,13 @@
 </head>
 
 <body>
+  <div id="danger-alert" class="alert alert-danger text-center mb-0 position-fixed top-0 start-0 w-100" role="alert" style="z-index: 2000; border-radius: 0; display: none;">
+    An error occurred while processing the files. Make sure those are valid WAV files.
+  </div>
+  <div id="info-alert" class="alert alert-info text-center mb-0 position-fixed top-0 start-0 w-100" role="alert" style="z-index: 2000; border-radius: 0; display: none;">
+    Your download should start now.
+  </div>
+  <div style="height: 56px;"></div>
   <div class="container mt-5">
     <div class="row">
 
@@ -51,8 +58,8 @@
               <p class="mb-2 text-secondary">Drop WAV samples at the page</p>
 
             </div>
-            <button id="start-button" type="button" class="btn btn-primary w-100" disabled="true">Start</button>
-            <p class="small text-muted mt-3">No files selected</p>
+            <button id="start-button" type="button" class="btn btn-primary w-100" disabled="true" onclick="processFiles()">Start</button>
+            <p id="num-files-selected" class="small text-muted mt-3">No files selected</p>
           </div>
         </div>
       </div>
