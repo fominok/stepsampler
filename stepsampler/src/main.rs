@@ -17,6 +17,8 @@ struct Args {
 }
 
 fn main() -> Result<()> {
+    env_logger::init();
+
     let args: Args = argh::from_env();
 
     if args.input.is_empty() {
