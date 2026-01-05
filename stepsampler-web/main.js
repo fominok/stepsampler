@@ -19,7 +19,13 @@ function showDanger() {
 function processFiles() {
   let result;
   try {
-    result = window.wasmBindings.process_files(files);
+    const rateInput = document.getElementById("out-rate").value.trim();
+    const silenceThresholdInput = document.getElementById("silence-threshold").value.trim();
+    const rate = rateInput ? (isNaN(parseInt(rateInput)) ? null : parseInt(rateInput)) : null;
+    const silenceThreshold = silenceThresholdInput ? (isNaN(parseFloat(silenceThresholdInput)) ? null : parseFloat(silenceThresholdInput)) : null;
+    const stereo = document.getElementById("stereo").checked;
+
+    result = window.wasmBindings.process_files(files, rate, silenceThreshold, stereo);
   } catch (error) {
     console.error(error);
     showDanger();

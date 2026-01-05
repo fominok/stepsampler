@@ -12,7 +12,7 @@ Stepsampler takes multiple audio samples and creates a single, evenly-sized samp
 
 1. **Trimming silence** from the beginning and end of each sample
 2. **Normalizing volume** across all samples
-3. **Converting to mono** and standardizing to 44.1kHz 16-bit format
+3. **Standardizing** according to the config (mono/stereo, sampling rate)
 4. **Padding with silence** to make all samples the same length
 5. **Concatenating** them into a single WAV file
 
