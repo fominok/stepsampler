@@ -60,7 +60,19 @@
             </div>
             <div class="mb-3" style="width:100%; text-align: left;">
               <label for="out-rate" class="form-label small">Output Sampling Rate (Hz):</label>
-              <input type="number" class="form-control form-control-sm" id="out-rate" value="44100" min="8000" max="192000" step="1000">
+              <select class="form-select form-select-sm" id="out-rate">
+                <option value="48000">48000</option>
+                <option value="44100" selected>44100</option>
+                <option value="22050">22050</option>
+                <option value="11025">11025</option>
+              </select>
+            </div>
+            <div class="mb-3" style="width:100%; text-align: left;">
+              <label for="bit-depth" class="form-label small">Bit Depth:</label>
+              <select class="form-select form-select-sm" id="bit-depth">
+                <option value="16" selected>16 bits</option>
+                <option value="24">24 bits</option>
+              </select>
             </div>
             <div class="mb-3" style="width:100%; text-align: left;">
               <label for="silence-threshold" class="form-label small">Silence Threshold:</label>

@@ -21,11 +21,13 @@ function processFiles() {
   try {
     const rateInput = document.getElementById("out-rate").value.trim();
     const silenceThresholdInput = document.getElementById("silence-threshold").value.trim();
+    const bitDepthInput = document.getElementById("bit-depth").value.trim();
     const rate = rateInput ? (isNaN(parseInt(rateInput)) ? null : parseInt(rateInput)) : null;
     const silenceThreshold = silenceThresholdInput ? (isNaN(parseFloat(silenceThresholdInput)) ? null : parseFloat(silenceThresholdInput)) : null;
+    const bitDepth = bitDepthInput ? (isNaN(parseInt(bitDepthInput)) ? null : parseInt(bitDepthInput)) : null;
     const stereo = document.getElementById("stereo").checked;
 
-    result = window.wasmBindings.process_files(files, rate, silenceThreshold, stereo);
+    result = window.wasmBindings.process_files(files, rate, silenceThreshold, stereo, bitDepth);
   } catch (error) {
     console.error(error);
     showDanger();

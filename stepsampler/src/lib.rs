@@ -13,6 +13,7 @@ use rubato::{Fft, Resampler};
 
 pub const DEFAULT_OUT_RATE: u32 = 44100;
 pub const DEFAULT_SILENCE_THRESHOLD: f32 = 0.005;
+pub const DEFAULT_BITS_PER_SAMPLE: u16 = 16;
 
 fn mono(left: f32, right: f32) -> f32 {
     (left + right) / 2.
@@ -190,12 +191,14 @@ pub struct Config {
     pub silence_threshold: f32,
     pub stereo: bool,
     pub rate: u32,
+    pub bits_per_sample: u16,
 }
 
 impl Display for Config {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "silence threshold: {}, ", self.silence_threshold)?;
         write!(f, "sampling rate: {}, ", self.rate)?;
+        write!(f, "bit depth: {} bits, ", self.bits_per_sample)?;
         f.write_str(if self.stereo { "stereo" } else { "mono" })?;
 
         Ok(())
@@ -234,14 +237,30 @@ pub fn step_sample<R: Read + 'static>(
         WavSpec {
             channels: if config.stereo { 2 } else { 1 },
             sample_rate: config.rate,
-            bits_per_sample: 16,
+            bits_per_sample: config.bits_per_sample,
             sample_format: SampleFormat::Int,
         },
     )
     .context("initializing wav writer")?;
 
-    for s in concat_sample {
-        wav_writer.write_sample((s * i16::MAX as f32) as i16)?;
+    match config.bits_per_sample {
+        16 => {
+            for s in concat_sample {
+                wav_writer.write_sample::<i16>((s * i16::MAX as f32) as i16)?;
+            }
+        }
+        24 => {
+            for s in concat_sample {
+                // For 24-bit, hound uses i32 with upper 8 bits unused
+                let mut sample = (s * 8388607.0) as i32; // 2^23 - 1
+                sample = sample.clamp(-(1 << 23), (1 << 23) - 1);
+                wav_writer.write_sample::<i32>(sample)?;
+            }
+        }
+        _ => bail!(
+            "Unsupported bit depth: {}. Only 16 and 24 bits are supported.",
+            config.bits_per_sample
+        ),
     }
 
     drop(wav_writer);

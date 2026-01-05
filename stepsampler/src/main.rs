@@ -29,6 +29,14 @@ struct Args {
     )]
     silence_threshold: f32,
 
+    #[argh(
+        option,
+        short = 'b',
+        description = "bit depth (16 or 24)",
+        default = "stepsampler::DEFAULT_BITS_PER_SAMPLE"
+    )]
+    bits_per_sample: u16,
+
     #[argh(switch, short = 's', description = "produce stereo output")]
     stereo: bool,
 
@@ -55,6 +63,7 @@ fn main() -> Result<()> {
         silence_threshold: args.silence_threshold,
         stereo: args.stereo,
         rate: args.out_rate,
+        bits_per_sample: args.bits_per_sample,
     };
 
     println!(
