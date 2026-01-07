@@ -58,35 +58,44 @@ fn make_samples_iter(
 }
 
 fn trim_start(
-    silence_threshold: f32,
-    mut samples_iter: Peekable<impl Iterator<Item = Result<f32, HoundErrorStr>>>,
+    config: &Config,
+    samples_iter: Peekable<impl Iterator<Item = Result<f32, HoundErrorStr>>>,
 ) -> Result<impl Iterator<Item = Result<f32, HoundErrorStr>>, HoundErrorStr> {
-    while let Some(sample_res) = samples_iter.peek() {
-        match sample_res {
-            Ok(sample) => {
-                if sample.abs() < silence_threshold {
-                    samples_iter.next();
-                } else {
-                    break;
+    let mut samples_iter = samples_iter.multipeek();
+    'outer: loop {
+        for _ in 0..config.channels() {
+            let Some(sample_res) = samples_iter.peek() else {
+                break 'outer;
+            };
+            match sample_res {
+                Ok(sample) => {
+                    if sample.abs() >= config.silence_threshold {
+                        break 'outer;
+                    }
+                }
+                Err(_) => {
+                    if let Some(Err(e)) = samples_iter.next() {
+                        return Err(e);
+                    }
                 }
             }
-            Err(_) => {
-                if let Some(Err(e)) = samples_iter.next() {
-                    return Err(e);
-                }
-            }
+        }
+        for _ in 0..config.channels() {
+            samples_iter.next();
         }
     }
 
     Ok(samples_iter)
 }
 
-fn trim_end(silence_threshold: f32, mut samples: Vec<f32>) -> Vec<f32> {
-    let silence_end_n = samples
+fn trim_end(config: &Config, mut samples: Vec<f32>) -> Vec<f32> {
+    let mut silence_end_n = samples
         .iter()
         .rev()
-        .take_while(|s| **s < silence_threshold)
+        .take_while(|s| s.abs() < config.silence_threshold)
         .count();
+    silence_end_n = silence_end_n.saturating_sub(silence_end_n % config.channels());
+
     debug!("silent samples at the end: {silence_end_n}");
 
     samples.truncate(samples.len() - silence_end_n);
@@ -95,7 +104,7 @@ fn trim_end(silence_threshold: f32, mut samples: Vec<f32>) -> Vec<f32> {
 }
 
 fn resample(config: &Config, input_rate: usize, samples: &[f32]) -> Result<Vec<f32>> {
-    let channels = if config.stereo { 2 } else { 1 };
+    let channels = config.channels();
     let mut resampler = Fft::new(
         input_rate,
         config.rate as usize,
@@ -154,7 +163,7 @@ fn process_file(config: &Config, bytes: impl Read + 'static) -> Result<Vec<f32>>
     };
 
     // Trim silence in the start:
-    let mut samples_iter = trim_start(config.silence_threshold, samples_iter.peekable())?;
+    let mut samples_iter = trim_start(config, samples_iter.peekable())?;
 
     // Find peak value, evaluating the iterator, so getting rid of `Result`:
     let (peak, samples) =
@@ -166,7 +175,7 @@ fn process_file(config: &Config, bytes: impl Read + 'static) -> Result<Vec<f32>>
         })?;
 
     // Trim silence in the end:
-    let mut samples = trim_end(config.silence_threshold, samples);
+    let mut samples = trim_end(config, samples);
 
     // Normalize volume:
     let scale = 1. / peak;
@@ -192,6 +201,12 @@ pub struct Config {
     pub stereo: bool,
     pub rate: u32,
     pub bits_per_sample: u16,
+}
+
+impl Config {
+    fn channels(&self) -> usize {
+        if self.stereo { 2 } else { 1 }
+    }
 }
 
 impl Display for Config {
@@ -235,7 +250,7 @@ pub fn step_sample<R: Read + 'static>(
     let mut wav_writer = WavWriter::new(
         &mut cursor,
         WavSpec {
-            channels: if config.stereo { 2 } else { 1 },
+            channels: config.channels() as u16,
             sample_rate: config.rate,
             bits_per_sample: config.bits_per_sample,
             sample_format: SampleFormat::Int,
